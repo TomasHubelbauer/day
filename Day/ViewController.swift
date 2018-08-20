@@ -34,6 +34,8 @@ extension ViewController: UITextFieldDelegate {
                 data[""] = [text] + (data[""] ?? [])
                 saveData(data: data)
                 self.itemTableView.reloadData()
+                // TODO: Fix the above supposedly disabling animation with the below
+                // self.itemTableView.insertRows(at: <#T##[IndexPath]#>, with: <#T##UITableViewRowAnimation#>)
             }
             
             textField.text = ""
@@ -106,7 +108,6 @@ extension ViewController: UITableViewDataSource {
         
         saveData(data: data)
         data = loadData()
-        tableView.reloadData()
     }
 }
 
