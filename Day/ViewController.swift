@@ -2,6 +2,7 @@ import UIKit
 
 class ViewController: UIViewController {
     @IBOutlet weak var editorTextField: UITextField!
+    @IBOutlet weak var editSwitch: UISwitch!
     @IBOutlet weak var itemTableView: UITableView!
     
     typealias Data = [String : [String]]
@@ -11,8 +12,12 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         data = loadData()
         editorTextField.delegate = self
+        editSwitch.addTarget(self, action: #selector(onToggleEditMode), for: .valueChanged)
         itemTableView.dataSource = self
-        //itemTableView.allowsMultipleSelectionDuringEditing = true
+    }
+    
+    @objc func onToggleEditMode() {
+        itemTableView.isEditing = !itemTableView.isEditing
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -65,6 +70,10 @@ extension ViewController: UITableViewDataSource {
         return true
     }
     
+    func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+    
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         if (editingStyle == .delete) {
             let key = Array(data.keys)[indexPath.section]
@@ -81,6 +90,23 @@ extension ViewController: UITableViewDataSource {
             }))
             self.present(alert, animated: true, completion: nil)
         }
+    }
+    
+    func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
+        let sourceKey = Array(data.keys)[sourceIndexPath.section]
+        var sourceArray = data[sourceKey]!
+        let item = sourceArray[sourceIndexPath.row]
+        sourceArray.remove(at: sourceIndexPath.row)
+        data[sourceKey] = sourceArray
+
+        let destinationKey = Array(data.keys)[destinationIndexPath.section]
+        var destinationArray = data[destinationKey]!
+        destinationArray.insert(item, at: destinationIndexPath.row)
+        data[destinationKey] = destinationArray
+        
+        saveData(data: data)
+        data = loadData()
+        tableView.reloadData()
     }
 }
 

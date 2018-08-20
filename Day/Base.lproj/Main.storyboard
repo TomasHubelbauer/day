@@ -33,26 +33,39 @@
                                 </prototypes>
                             </tableView>
                             <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="Jmd-SI-R31">
-                                <rect key="frame" x="16" y="20" width="343" height="30"/>
+                                <rect key="frame" x="16" y="20" width="286" height="30"/>
                                 <nil key="textColor"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits"/>
                             </textField>
+                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="QZH-dT-Z9T">
+                                <rect key="frame" x="310" y="20" width="51" height="31"/>
+                            </switch>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="Jmd-SI-R31" secondAttribute="trailing" constant="16" id="3F7-n9-pAD"/>
+                            <constraint firstItem="HTY-iN-G4W" firstAttribute="top" secondItem="QZH-dT-Z9T" secondAttribute="bottom" constant="7" id="2Cg-Qw-0H1"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="HTY-iN-G4W" secondAttribute="bottom" constant="20" id="41C-Qm-6ye"/>
-                            <constraint firstItem="Jmd-SI-R31" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="16" id="Hrr-74-6nn"/>
+                            <constraint firstItem="Jmd-SI-R31" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="16" id="Cls-r9-yU7"/>
+                            <constraint firstItem="HTY-iN-G4W" firstAttribute="top" secondItem="Jmd-SI-R31" secondAttribute="bottom" constant="8" id="DBY-JS-2du"/>
+                            <constraint firstItem="HTY-iN-G4W" firstAttribute="top" secondItem="Jmd-SI-R31" secondAttribute="bottom" constant="9" id="EnS-XZ-dgp"/>
                             <constraint firstItem="HTY-iN-G4W" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="16" id="JG8-cT-bJ0"/>
-                            <constraint firstItem="HTY-iN-G4W" firstAttribute="top" secondItem="Jmd-SI-R31" secondAttribute="bottom" constant="8" id="JJQ-fO-Ycn"/>
+                            <constraint firstItem="QZH-dT-Z9T" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="NFg-tc-M16"/>
+                            <constraint firstItem="QZH-dT-Z9T" firstAttribute="leading" secondItem="Jmd-SI-R31" secondAttribute="trailing" constant="8" id="NLp-ZR-Zdk"/>
+                            <constraint firstItem="Jmd-SI-R31" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="NYc-wV-xY4"/>
+                            <constraint firstItem="Jmd-SI-R31" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="16" id="Qpr-AI-NbF"/>
+                            <constraint firstItem="HTY-iN-G4W" firstAttribute="top" secondItem="Jmd-SI-R31" secondAttribute="bottom" constant="8" id="Vxy-Vs-2J5"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="HTY-iN-G4W" secondAttribute="trailing" constant="16" id="eg1-Ht-BQ4"/>
-                            <constraint firstItem="Jmd-SI-R31" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="iqc-wc-Kkt"/>
-                            <constraint firstItem="HTY-iN-G4W" firstAttribute="top" secondItem="Jmd-SI-R31" secondAttribute="bottom" constant="8" id="pFP-3M-ZNe"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="QZH-dT-Z9T" secondAttribute="trailing" constant="16" id="iqS-LY-9RE"/>
+                            <constraint firstItem="QZH-dT-Z9T" firstAttribute="leading" secondItem="Jmd-SI-R31" secondAttribute="trailing" constant="8" id="jXb-kU-cWb"/>
+                            <constraint firstItem="Jmd-SI-R31" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="nYX-eT-GjG"/>
+                            <constraint firstItem="HTY-iN-G4W" firstAttribute="top" secondItem="Jmd-SI-R31" secondAttribute="bottom" constant="8" id="pcP-db-IO6"/>
+                            <constraint firstItem="Jmd-SI-R31" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="16" id="y08-nD-MoE"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
                     <connections>
+                        <outlet property="editSwitch" destination="QZH-dT-Z9T" id="D1o-Mk-L7P"/>
                         <outlet property="editorTextField" destination="Jmd-SI-R31" id="2GA-a1-qw6"/>
                         <outlet property="itemTableView" destination="HTY-iN-G4W" id="x8g-SJ-OZS"/>
                     </connections>
