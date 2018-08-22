@@ -4,30 +4,43 @@ class ViewController: UIViewController {
     @IBOutlet weak var editorTextField: UITextField!
     @IBOutlet weak var itemTableView: UITableView!
 
-    typealias Data = [String : [String]]
-    
-    private var data: Data!
+    private var items: Items?
     
     override func viewDidLoad() {
-        data = loadData()
-
-        editorTextField.delegate = self
-        editorTextField.becomeFirstResponder()
-        
-        itemTableView.dataSource = self
-        itemTableView.delegate = self
-        
-        editButtonItem.action = #selector(onEdit)
+        do {
+            items = try Items()
+            
+            editorTextField.delegate = self
+            editorTextField.becomeFirstResponder()
+            
+            itemTableView.dataSource = self
+            itemTableView.delegate = self
+            
+            editButtonItem.action = #selector(onEnableEdit)
+        } catch {
+            // Construct an alert with no button so that the user has no choice but to exit the app
+            let fatalAlert = UIAlertController(title: "Day", message: "Failed to load items", preferredStyle: .alert)
+            self.present(fatalAlert, animated: true, completion: nil)
+        }
     }
     
-    @objc func onEdit() {
+    @objc func onEnableEdit() {
+        itemTableView.isEditing = true
+        editButtonItem.title = "Done"
+        editButtonItem.action = #selector(onDisableEdit)
+        
         if itemTableView.isEditing {
             itemTableView.isEditing = false
             editButtonItem.title = "Edit"
         } else {
-            itemTableView.isEditing = true
-            editButtonItem.title = "Done"
+            
         }
+    }
+    
+    @objc func onDisableEdit() {
+        itemTableView.isEditing = false
+        editButtonItem.title = "Edit"
+        editButtonItem.action = #selector(onEnableEdit)
     }
 }
 
@@ -37,14 +50,24 @@ extension ViewController: UITextFieldDelegate {
         if var text = textField.text {
             text = text.trimmingCharacters(in: .whitespacesAndNewlines)
             if !text.isEmpty {
-                data[""] = [text] + (data[""] ?? [])
-                saveData(data: data)
-                self.itemTableView.reloadData()
-                // TODO: Fix the above supposedly disabling animation with the below
-                // self.itemTableView.insertRows(at: <#T##[IndexPath]#>, with: <#T##UITableViewRowAnimation#>)
+                if let items = items {
+                    do {
+                        let (section, item) = try items.add(section: "", item: text)
+                        let indexPath = IndexPath(item: item, section: section)
+                        itemTableView.insertRows(at: [indexPath], with: .automatic)
+                        textField.text = ""
+                    } catch {
+                        // TODO: Telemetry
+                        showError(error: error.localizedDescription)
+                        return false
+                    }
+                } else {
+                    // TODO: Telemetry
+                    showError(error: "Cannot save; items failed to load")
+                    return false
+                }
             }
             
-            textField.text = ""
             textField.resignFirstResponder()
         }
         
@@ -56,33 +79,66 @@ extension ViewController: UITextFieldDelegate {
 
 extension ViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        // Assume this works - no error handling
         let itemViewController =
             self.storyboard?.instantiateViewController(withIdentifier: "ItemViewController") as! ItemViewController
-        itemViewController.item = data[Array(data.keys)[indexPath.section]]![indexPath.row]
-        self.navigationController?.pushViewController(itemViewController, animated: true)
+        if let items = items {
+            // Must pass these as fields, cannot use init on the view controller: https://stackoverflow.com/a/27145059
+            itemViewController.items = items
+            itemViewController.indexPath = indexPath
+            self.navigationController?.pushViewController(itemViewController, animated: true)
+        }
     }
 }
 
 // itemsTableView
 extension ViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return data.count
+        if let items = items {
+            return items.getSectionCount()
+        } else {
+            // TODO: Telemetry
+            return 0
+        }
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        let array = data[Array(data.keys)[section]]!
-        return array.count
+        if let items = items {
+            do {
+                return try items.getSectionItemsCount(sectionIndex: section)
+            } catch {
+                // TODO: Telemetry
+                return 0
+            }
+        } else {
+            // TODO: Telemetry
+            return 0
+        }
     }
     
      func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ItemCell")!
-        let text = data[Array(data.keys)[indexPath.section]]![indexPath.row]
-        cell.textLabel?.text = text
+        let cell = tableView.dequeueReusableCell(withIdentifier: "ItemCell")! // Assume success because we handle the name
+        if let items = items {
+            do {
+                let item = try items.getItem(sectionIndex: indexPath.section, index: indexPath.row)
+                cell.textLabel?.text = item
+            } catch {
+                // TODO: Telemetry
+            }
+        } else {
+            // TODO: Telemetry
+        }
+        
         return cell
     }
     
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return Array(data.keys)[section]
+        if let items = items {
+            return items.getSectionName(index: section)
+        } else {
+            // TODO: Telemetry
+            return nil
+        }
     }
     
     func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
@@ -94,94 +150,47 @@ extension ViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
-        if (editingStyle == .delete) {
-            let key = Array(data.keys)[indexPath.section]
-            var array = data[key]!
-            let item = array[indexPath.row]
-            let alert = UIAlertController(title: "Day", message: item, preferredStyle: UIAlertControllerStyle.alert)
-            alert.addAction(UIAlertAction(title: "Keep", style: UIAlertActionStyle.cancel, handler: nil))
-            alert.addAction(UIAlertAction(title: "Delete", style: UIAlertActionStyle.destructive, handler: { (alertAction:UIAlertAction!) in
-                array.remove(at: indexPath.row)
-                self.data[key] = array
-                self.saveData(data: self.data)
-                self.data = self.loadData()
-                tableView.deleteRows(at: [indexPath], with: .fade)
-            }))
-            self.present(alert, animated: true, completion: nil)
+        if let items = items {
+            if (editingStyle == .delete) {
+                do {
+                    let item = try items.getItem(sectionIndex: indexPath.section, index: indexPath.row)
+                    let alert = UIAlertController(title: "Day", message: item, preferredStyle: UIAlertControllerStyle.alert)
+                    alert.addAction(UIAlertAction(title: "Keep", style: UIAlertActionStyle.cancel, handler: nil))
+                    alert.addAction(UIAlertAction(title: "Delete", style: UIAlertActionStyle.destructive, handler: { (alertAction:UIAlertAction!) in
+                        do {
+                            let _ = try items.removeItem(sectionIndex: indexPath.section, index: indexPath.row)
+                            tableView.deleteRows(at: [indexPath], with: .fade)
+                        } catch {
+                            self.showError(error: "Failed to remove")
+                        }
+                    }))
+                    
+                    self.present(alert, animated: true, completion: nil)
+                } catch {
+                    showError(error: "Failed to find the item")
+                }
+            } else {
+                showError(error: "Unexpected editing stle \(editingStyle.rawValue)")
+            }
+        } else {
+            showError(error: "Failed to load")
         }
     }
     
     func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
-        let sourceKey = Array(data.keys)[sourceIndexPath.section]
-        var sourceArray = data[sourceKey]!
-        let item = sourceArray[sourceIndexPath.row]
-        sourceArray.remove(at: sourceIndexPath.row)
-        data[sourceKey] = sourceArray
-
-        let destinationKey = Array(data.keys)[destinationIndexPath.section]
-        var destinationArray = data[destinationKey]!
-        destinationArray.insert(item, at: destinationIndexPath.row)
-        data[destinationKey] = destinationArray
-        
-        saveData(data: data)
-        data = loadData()
-    }
-}
-
-// Data management
-extension ViewController {
-    func saveData(data: Data) {
-        if let documentsDirectoryUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-            let dataFileUrl = documentsDirectoryUrl.appendingPathComponent("data.txt")
-            do {
-                var contents = ""
-                for (section, items) in data {
-                    contents.append("[" + section + "]\n")
-                    for item in items {
-                        contents.append(item + "\n")
-                    }
+        if let items = items {
+            if let item = try? items.removeItem(sectionIndex: sourceIndexPath.section, index: sourceIndexPath.row) {
+                do {
+                    try items.insertItem(sectionIndex: destinationIndexPath.section, index: destinationIndexPath.row, item: item)
+                } catch {
+                    showError(error: "Failed to save")
                 }
-                
-                try contents.write(to: dataFileUrl, atomically: false, encoding: .utf8)
-            } catch {
-                showError(error: "Failed to initialize the data file")
+            } else {
+                showError(error: "Not found: \(sourceIndexPath.section)-\(sourceIndexPath.row)")
             }
         } else {
-            showError(error: "Documents directory does not exist")
+            showError(error: "Failed to load")
         }
-    }
-    
-    func loadData() -> Data {
-        if let documentsDirectoryUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-            let dataFileUrl = documentsDirectoryUrl.appendingPathComponent("data.txt")
-            do {
-                let contents = try String(contentsOf: dataFileUrl)
-                var data: Data = [:]
-                var section = ""
-                for component in contents.components(separatedBy: .newlines) {
-                    if (component.isEmpty) {
-                        continue
-                    }
-                    
-                    if (component.hasPrefix("[") && component.hasSuffix("]")) {
-                        section = String(component.dropFirst().dropLast())
-                        data[section] = data[section] ?? [] // Prevent data loss due to name conflict
-                    } else {
-                        var array = data[section] ?? []
-                        array.append(component)
-                        data[section] = array
-                    }
-                }
-                
-                return data
-            } catch {
-                showError(error: "Failed to initialize the data file")
-            }
-        } else {
-            showError(error: "Documents directory does not exist")
-        }
-        
-        return [:]
     }
 }
 

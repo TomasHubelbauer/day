@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		E224D860212DE53400D12E3D /* ItemViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E224D85F212DE53400D12E3D /* ItemViewController.swift */; };
+		E242178F212DF01700C012A2 /* Items.swift in Sources */ = {isa = PBXBuildFile; fileRef = E242178E212DF01700C012A2 /* Items.swift */; };
 		E2B8F908212ABFA000C36820 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B8F907212ABFA000C36820 /* AppDelegate.swift */; };
 		E2B8F90A212ABFA000C36820 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B8F909212ABFA000C36820 /* ViewController.swift */; };
 		E2B8F90D212ABFA000C36820 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E2B8F90B212ABFA000C36820 /* Main.storyboard */; };
@@ -17,6 +18,7 @@
 
 /* Begin PBXFileReference section */
 		E224D85F212DE53400D12E3D /* ItemViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemViewController.swift; sourceTree = "<group>"; };
+		E242178E212DF01700C012A2 /* Items.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Items.swift; sourceTree = "<group>"; };
 		E2B8F904212ABFA000C36820 /* Day.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Day.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2B8F907212ABFA000C36820 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		E2B8F909212ABFA000C36820 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -63,6 +65,7 @@
 				E2B8F90E212ABFA200C36820 /* Assets.xcassets */,
 				E2B8F910212ABFA200C36820 /* LaunchScreen.storyboard */,
 				E2B8F913212ABFA200C36820 /* Info.plist */,
+				E242178E212DF01700C012A2 /* Items.swift */,
 			);
 			path = Day;
 			sourceTree = "<group>";
@@ -140,6 +143,7 @@
 			files = (
 				E2B8F90A212ABFA000C36820 /* ViewController.swift in Sources */,
 				E2B8F908212ABFA000C36820 /* AppDelegate.swift in Sources */,
+				E242178F212DF01700C012A2 /* Items.swift in Sources */,
 				E224D860212DE53400D12E3D /* ItemViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
