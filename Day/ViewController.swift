@@ -2,26 +2,32 @@ import UIKit
 
 class ViewController: UIViewController {
     @IBOutlet weak var editorTextField: UITextField!
-    @IBOutlet weak var editSwitch: UISwitch!
     @IBOutlet weak var itemTableView: UITableView!
-    
+
     typealias Data = [String : [String]]
     
     private var data: Data!
     
     override func viewDidLoad() {
         data = loadData()
+
         editorTextField.delegate = self
-        editSwitch.addTarget(self, action: #selector(onToggleEditMode), for: .valueChanged)
-        itemTableView.dataSource = self
-    }
-    
-    @objc func onToggleEditMode() {
-        itemTableView.isEditing = !itemTableView.isEditing
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
         editorTextField.becomeFirstResponder()
+        
+        itemTableView.dataSource = self
+        itemTableView.delegate = self
+        
+        editButtonItem.action = #selector(onEdit)
+    }
+    
+    @objc func onEdit() {
+        if itemTableView.isEditing {
+            itemTableView.isEditing = false
+            editButtonItem.title = "Edit"
+        } else {
+            itemTableView.isEditing = true
+            editButtonItem.title = "Done"
+        }
     }
 }
 
@@ -43,6 +49,17 @@ extension ViewController: UITextFieldDelegate {
         }
         
         return true
+    }
+}
+
+// itemsTableView
+
+extension ViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let itemViewController =
+            self.storyboard?.instantiateViewController(withIdentifier: "ItemViewController") as! ItemViewController
+        itemViewController.item = data[Array(data.keys)[indexPath.section]]![indexPath.row]
+        self.navigationController?.pushViewController(itemViewController, animated: true)
     }
 }
 
