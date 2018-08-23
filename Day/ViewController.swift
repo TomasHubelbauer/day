@@ -16,35 +16,29 @@ class ViewController: UIViewController {
             itemTableView.dataSource = self
             itemTableView.delegate = self
             
-            editButtonItem.action = #selector(onEnableEdit)
+            editButtonItem.action = #selector(onToggleEdit)
         } catch {
             // Construct an alert with no button so that the user has no choice but to exit the app
-            let fatalAlert = UIAlertController(title: "Day", message: "Failed to load items", preferredStyle: .alert)
-            self.present(fatalAlert, animated: true, completion: nil)
+            showError("Failed to load", fatal: true)
         }
     }
     
-    @objc func onEnableEdit() {
-        itemTableView.isEditing = true
-        editButtonItem.title = "Done"
-        editButtonItem.action = #selector(onDisableEdit)
-        
-        if itemTableView.isEditing {
-            itemTableView.isEditing = false
-            editButtonItem.title = "Edit"
-        } else {
-            
-        }
+    @objc func onToggleEdit() {
+        itemTableView.isEditing = !itemTableView.isEditing
+        editButtonItem.title = itemTableView.isEditing ? "Done" : "Edit"
     }
     
-    @objc func onDisableEdit() {
-        itemTableView.isEditing = false
-        editButtonItem.title = "Edit"
-        editButtonItem.action = #selector(onEnableEdit)
+    func showError(_ error: String, fatal: Bool = false) {
+        let alert = UIAlertController(title: "Day", message: error, preferredStyle: UIAlertControllerStyle.alert)
+        if !fatal {
+            alert.addAction(UIAlertAction(title: "Close", style: UIAlertActionStyle.default, handler: nil))
+        }
+
+        self.present(alert, animated: true, completion: nil)
     }
 }
 
-// editorTextField
+// editorTextField UITextFieldDelegate
 extension ViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         if var text = textField.text {
@@ -52,18 +46,18 @@ extension ViewController: UITextFieldDelegate {
             if !text.isEmpty {
                 if let items = items {
                     do {
-                        let (section, item) = try items.add(section: "", item: text)
-                        let indexPath = IndexPath(item: item, section: section)
+                        let sectionIndex = try items.queueItem(section: "", text)
+                        let indexPath = IndexPath(item: 0, section: sectionIndex)
                         itemTableView.insertRows(at: [indexPath], with: .automatic)
                         textField.text = ""
                     } catch {
-                        // TODO: Telemetry
-                        showError(error: error.localizedDescription)
+                        // TODO: Send to telemetry (should not fail)
+                        showError("Failed to queue")
                         return false
                     }
                 } else {
-                    // TODO: Telemetry
-                    showError(error: "Cannot save; items failed to load")
+                    // TODO: Send to telemetry (should not happen)
+                    showError("Failed to load", fatal: true)
                     return false
                 }
             }
@@ -75,58 +69,53 @@ extension ViewController: UITextFieldDelegate {
     }
 }
 
-// itemsTableView
-
+// itemsTableView UITableViewDelegate
 extension ViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        // Assume this works - no error handling
-        let itemViewController =
-            self.storyboard?.instantiateViewController(withIdentifier: "ItemViewController") as! ItemViewController
+        // Assume this works - we have the story board
+        let storyboard = self.storyboard!
+        // Assume this works - we control the identified and view controller
+        let itemViewController = storyboard.instantiateViewController(withIdentifier: "ItemViewController") as! ItemViewController
         if let items = items {
-            // Must pass these as fields, cannot use init on the view controller: https://stackoverflow.com/a/27145059
+            // Pass these as fields as we cannot use init on the view controller: https://stackoverflow.com/a/27145059
             itemViewController.items = items
             itemViewController.indexPath = indexPath
-            self.navigationController?.pushViewController(itemViewController, animated: true)
+            // Assume this works - we control the storyboard
+            let navigationController = self.navigationController!
+            navigationController.pushViewController(itemViewController, animated: true)
         }
     }
 }
 
-// itemsTableView
+// itemsTableView UITableViewDataSource
 extension ViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
         if let items = items {
-            return items.getSectionCount()
+            return items.getCount()
         } else {
-            // TODO: Telemetry
+            // TODO: Send to telemetry (should not happen)
             return 0
         }
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if let items = items {
-            do {
-                return try items.getSectionItemsCount(sectionIndex: section)
-            } catch {
-                // TODO: Telemetry
-                return 0
-            }
+            return items.getCount(sectionIndex: section)
         } else {
-            // TODO: Telemetry
+            // TODO: Send to telemetry (should not happen)
             return 0
         }
     }
     
      func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ItemCell")! // Assume success because we handle the name
+        // Assume this works - we handle the identifier and template
+        let cell = tableView.dequeueReusableCell(withIdentifier: "ItemCell")!
         if let items = items {
-            do {
-                let item = try items.getItem(sectionIndex: indexPath.section, index: indexPath.row)
-                cell.textLabel?.text = item
-            } catch {
-                // TODO: Telemetry
-            }
+            // Assume `textLabel` is there - we control the template
+            let textLabel = cell.textLabel!
+            textLabel.text = items.getItem(sectionIndex: indexPath.section, itemIndex: indexPath.row)
         } else {
-            // TODO: Telemetry
+            // TODO: Send to telemetry (should not happen)
         }
         
         return cell
@@ -134,71 +123,67 @@ extension ViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         if let items = items {
-            return items.getSectionName(index: section)
+            return items.getName(sectionIndex: section)
         } else {
-            // TODO: Telemetry
+            // TODO: Send to telemetry (should not happen)
             return nil
         }
     }
     
     func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        // TODO: Introduce non-editable + buttons at the end of each section
         return true
     }
     
     func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
+        // TODO: Introduce non-movable + buttons at the end of each section
         return true
     }
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         if let items = items {
-            if (editingStyle == .delete) {
-                do {
-                    let item = try items.getItem(sectionIndex: indexPath.section, index: indexPath.row)
-                    let alert = UIAlertController(title: "Day", message: item, preferredStyle: UIAlertControllerStyle.alert)
-                    alert.addAction(UIAlertAction(title: "Keep", style: UIAlertActionStyle.cancel, handler: nil))
-                    alert.addAction(UIAlertAction(title: "Delete", style: UIAlertActionStyle.destructive, handler: { (alertAction:UIAlertAction!) in
-                        do {
-                            let _ = try items.removeItem(sectionIndex: indexPath.section, index: indexPath.row)
-                            tableView.deleteRows(at: [indexPath], with: .fade)
-                        } catch {
-                            self.showError(error: "Failed to remove")
-                        }
-                    }))
-                    
-                    self.present(alert, animated: true, completion: nil)
-                } catch {
-                    showError(error: "Failed to find the item")
+            switch editingStyle {
+            case .delete: do {
+                let item = items.getItem(sectionIndex: indexPath.section, itemIndex: indexPath.row)
+                let alert = UIAlertController(title: "Day", message: item, preferredStyle: UIAlertControllerStyle.alert)
+                alert.addAction(UIAlertAction(title: "Keep", style: UIAlertActionStyle.cancel, handler: nil))
+                alert.addAction(UIAlertAction(title: "Delete", style: UIAlertActionStyle.destructive, handler: { (alertAction:UIAlertAction!) in
+                    do {
+                        let _ = try items.removeItem(sectionIndex: indexPath.section, itemIndex: indexPath.row)
+                        tableView.deleteRows(at: [indexPath], with: .fade)
+                    } catch {
+                        // TODO: Send to telemetry (should not fail)
+                        self.showError("Failed to remove")
+                    }
+                }))
+                
+                self.present(alert, animated: true, completion: nil)
                 }
-            } else {
-                showError(error: "Unexpected editing stle \(editingStyle.rawValue)")
+            case .insert: do {
+                // TODO: Send to telemetry (upcoming feature)
+                }
+            case .none: do {
+                // TODO: Send to telemetry (when does this happen?)
+                }
             }
         } else {
-            showError(error: "Failed to load")
+            // TODO: Send to telemetry (should not happen)
+            showError("Failed to load", fatal: true)
         }
     }
     
     func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
         if let items = items {
-            if let item = try? items.removeItem(sectionIndex: sourceIndexPath.section, index: sourceIndexPath.row) {
-                do {
-                    try items.insertItem(sectionIndex: destinationIndexPath.section, index: destinationIndexPath.row, item: item)
-                } catch {
-                    showError(error: "Failed to save")
-                }
-            } else {
-                showError(error: "Not found: \(sourceIndexPath.section)-\(sourceIndexPath.row)")
+            do {
+                let item = try items.removeItem(sectionIndex: sourceIndexPath.section, itemIndex: sourceIndexPath.row)
+                try items.insertItem(sectionIndex: destinationIndexPath.section, itemIndex: destinationIndexPath.row, item)
+            } catch {
+                // TODO: Send to telemetry (should not fail)
+                showError("Failed to move")
             }
         } else {
-            showError(error: "Failed to load")
+            // TODO: Send to telemetry (should not happen)
+            showError("Failed to load", fatal: true)
         }
-    }
-}
-
-// Error handling
-extension ViewController {
-    func showError(error: String) {
-        let alert = UIAlertController(title: "Day", message: error, preferredStyle: UIAlertControllerStyle.alert)
-        alert.addAction(UIAlertAction(title: "Close", style: UIAlertActionStyle.default, handler: nil))
-        self.present(alert, animated: true, completion: nil)
     }
 }

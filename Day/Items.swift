@@ -1,21 +1,22 @@
 import UIKit
 
 enum ItemsError: Error {
-    case documentsDirectoryDoesNotExist
+    case failedToLocate
     case failedToRead
     case noSectionWithIndex(index: Int, count: Int)
     case failedToWrite
 }
 
-// TODO: Remove ! in favor of throwing errors
 class Items {
-    var items: [String: [String]] = [:]
+    var sections: [String] = []
+    var items: [[String]] = []
 
     init() throws {
         if let documentsDirectoryUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
             let itemsFileUrl = documentsDirectoryUrl.appendingPathComponent("data.txt")
             if let contents = try? String(contentsOf: itemsFileUrl) {
                 var section = ""
+                var hasSection = false
                 for component in contents.components(separatedBy: .newlines) {
                     // Ignore empty lines
                     if (component.isEmpty) {
@@ -24,107 +25,84 @@ class Items {
                     
                     if (component.hasPrefix("[") && component.hasSuffix("]")) {
                         section = String(component.dropFirst().dropLast())
-                        // Prevent resetting a section if it appears multiple times
-                        if !items.keys.contains(section) {
-                            items[section] = []
-                        }
+                        sections.append(section)
+                        hasSection = true
+                        items.append([])
                     } else {
-                        if var array = items[section] {
-                            array.append(component)
-                            items[section] = array
-                        } else {
-                            items[section] = [component]
+                        // Create default section if we have item before section
+                        if !hasSection {
+                            sections.append(section)
+                            items.append([])
                         }
+                        
+                        items[sections.count - 1].append(component)
                     }
                 }
             } else {
                 throw ItemsError.failedToRead
             }
         } else {
-            throw ItemsError.documentsDirectoryDoesNotExist
+            throw ItemsError.failedToLocate
         }
-    }
-    
-    // TODO: Error handling
-    @inline(__always) func add(section: String, item: String) throws -> (Int, Int) {
-        if var array = items[section] {
-            array.append(item)
-            items[section] = array
-        } else {
-            items[section] = [item]
-        }
-        
-        let sectionIndex = Array(items.keys).index(of: section)! // TODO: Fix the error without Array()
-        let itemIndex = items[section]!.index(of: item)!
-        try save()
-        return (itemIndex, sectionIndex)
-    }
-    
-    @inline(__always) func getSectionCount() -> Int {
-        return items.keys.count
-    }
-    
-    @inline(__always) func getSectionName(index: Int) -> String {
-        return Array(items.keys)[index]
-    }
-    
-    @inline(__always) func getSectionItems(index: Int) -> [String]? {
-        return items[Array(items.keys)[index]]
     }
 
-    @inline(__always) func getSectionItemsCount(sectionIndex: Int) throws -> Int {
-        if let array = getSectionItems(index: sectionIndex) {
-            return array.count
-        } else {
-            throw ItemsError.noSectionWithIndex(index: sectionIndex, count: getSectionCount())
-        }
+    @inline(__always) func queueItem(section: String, _ item: String) throws -> Int {
+        let sectionIndex = sections.index(of: section) ?? {
+            sections.append(section)
+            items.append([])
+            return sections.endIndex
+        }()
+        
+        items[sectionIndex].insert(item, at: 0)
+        try save()
+        return sectionIndex
     }
     
-    @inline(__always) func getItem(sectionIndex: Int, index: Int) throws -> String? {
-        if let array = getSectionItems(index: sectionIndex) {
-            return array[index]
-        } else {
-            throw ItemsError.noSectionWithIndex(index: sectionIndex, count: getSectionCount())
-        }
+    @inline(__always) func getCount() -> Int {
+        return sections.count
     }
     
-    @inline(__always) func removeItem(sectionIndex: Int, index: Int) throws -> String {
-        if var array = getSectionItems(index: sectionIndex) {
-            let item = array[index]
-            array.remove(at: index)
-            return item
-        } else {
-            throw ItemsError.noSectionWithIndex(index: sectionIndex, count: getSectionCount())
-        }
+    @inline(__always) func getCount(sectionIndex: Int) -> Int {
+        return items[sectionIndex].count
     }
     
-    @inline(__always) func insertItem(sectionIndex: Int, index: Int, item: String) throws {
-        if var array = getSectionItems(index: sectionIndex) {
-            let item = array[index]
-            array.insert(item, at: index)
-        } else {
-            throw ItemsError.noSectionWithIndex(index: sectionIndex, count: getSectionCount())
-        }
+    @inline(__always) func getName(sectionIndex: Int) -> String {
+        return sections[sectionIndex]
+    }
+    
+    @inline(__always) func getItem(sectionIndex: Int, itemIndex: Int) -> String {
+        return items[sectionIndex][itemIndex]
+    }
+    
+    @inline(__always) func removeItem(sectionIndex: Int, itemIndex: Int) throws -> String {
+        let item = items[sectionIndex].remove(at: itemIndex)
+        try save()
+        return item
+    }
+    
+    @inline(__always) func insertItem(sectionIndex: Int, itemIndex: Int, _ item: String) throws {
+        items[sectionIndex].insert(item, at: itemIndex)
+        try save()
     }
 
     private func save() throws {
         if let documentsDirectoryUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-            let dataFileUrl = documentsDirectoryUrl.appendingPathComponent("data.txt")
+            let itemsFileUrl = documentsDirectoryUrl.appendingPathComponent("data.txt")
             do {
                 var contents = ""
-                for (section, items) in items {
-                    contents.append("[" + section + "]\n")
+                for (index, items) in items.enumerated() {
+                    contents.append("[" + sections[index] + "]\n")
                     for item in items {
                         contents.append(item + "\n")
                     }
                 }
                 
-                try contents.write(to: dataFileUrl, atomically: false, encoding: .utf8)
+                try contents.write(to: itemsFileUrl, atomically: true, encoding: .utf8)
             } catch {
                 throw ItemsError.failedToWrite
             }
         } else {
-            throw ItemsError.documentsDirectoryDoesNotExist
+            throw ItemsError.failedToLocate
         }
     }
 }
