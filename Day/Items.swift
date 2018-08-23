@@ -3,7 +3,6 @@ import UIKit
 enum ItemsError: Error {
     case failedToLocate
     case failedToRead
-    case noSectionWithIndex(index: Int, count: Int)
     case failedToWrite
 }
 
@@ -82,6 +81,11 @@ class Items {
     
     @inline(__always) func insertItem(sectionIndex: Int, itemIndex: Int, _ item: String) throws {
         items[sectionIndex].insert(item, at: itemIndex)
+        try save()
+    }
+    
+    @inline(__always) func setItem(sectionIndex: Int, itemIndex: Int, _ item: String) throws {
+        items[sectionIndex][itemIndex] = item
         try save()
     }
 

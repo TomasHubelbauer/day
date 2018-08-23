@@ -19,22 +19,13 @@ class ViewController: UIViewController {
             editButtonItem.action = #selector(onToggleEdit)
         } catch {
             // Construct an alert with no button so that the user has no choice but to exit the app
-            showError("Failed to load", fatal: true)
+            Errors.show(self, "Failed to load", fatal: true)
         }
     }
     
     @objc func onToggleEdit() {
         itemTableView.isEditing = !itemTableView.isEditing
         editButtonItem.title = itemTableView.isEditing ? "Done" : "Edit"
-    }
-    
-    func showError(_ error: String, fatal: Bool = false) {
-        let alert = UIAlertController(title: "Day", message: error, preferredStyle: UIAlertControllerStyle.alert)
-        if !fatal {
-            alert.addAction(UIAlertAction(title: "Close", style: UIAlertActionStyle.default, handler: nil))
-        }
-
-        self.present(alert, animated: true, completion: nil)
     }
 }
 
@@ -52,12 +43,12 @@ extension ViewController: UITextFieldDelegate {
                         textField.text = ""
                     } catch {
                         // TODO: Send to telemetry (should not fail)
-                        showError("Failed to queue")
+                        Errors.show(self, "Failed to queue")
                         return false
                     }
                 } else {
                     // TODO: Send to telemetry (should not happen)
-                    showError("Failed to load", fatal: true)
+                    Errors.show(self, "Failed to load", fatal: true)
                     return false
                 }
             }
@@ -80,6 +71,9 @@ extension ViewController: UITableViewDelegate {
             // Pass these as fields as we cannot use init on the view controller: https://stackoverflow.com/a/27145059
             itemViewController.items = items
             itemViewController.indexPath = indexPath
+            itemViewController.reloadInList = {
+                self.itemTableView.reloadRows(at: [indexPath], with: .none)
+            }
             // Assume this works - we control the storyboard
             let navigationController = self.navigationController!
             navigationController.pushViewController(itemViewController, animated: true)
@@ -153,7 +147,7 @@ extension ViewController: UITableViewDataSource {
                         tableView.deleteRows(at: [indexPath], with: .fade)
                     } catch {
                         // TODO: Send to telemetry (should not fail)
-                        self.showError("Failed to remove")
+                        Errors.show(self, "Failed to remove")
                     }
                 }))
                 
@@ -168,7 +162,7 @@ extension ViewController: UITableViewDataSource {
             }
         } else {
             // TODO: Send to telemetry (should not happen)
-            showError("Failed to load", fatal: true)
+            Errors.show(self, "Failed to load", fatal: true)
         }
     }
     
@@ -179,11 +173,11 @@ extension ViewController: UITableViewDataSource {
                 try items.insertItem(sectionIndex: destinationIndexPath.section, itemIndex: destinationIndexPath.row, item)
             } catch {
                 // TODO: Send to telemetry (should not fail)
-                showError("Failed to move")
+                Errors.show(self, "Failed to move")
             }
         } else {
             // TODO: Send to telemetry (should not happen)
-            showError("Failed to load", fatal: true)
+            Errors.show(self, "Failed to load", fatal: true)
         }
     }
 }
