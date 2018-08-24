@@ -118,16 +118,14 @@ extension ViewController: UITableViewDataSource {
         if let items = items {
             switch editingStyle {
             case .delete: do {
-                let item = items.getItem(sectionIndex: indexPath.section, itemIndex: indexPath.row)
-                Alerts.askDelete(self, item, delete: {
-                    do {
-                        let _ = try items.removeItem(sectionIndex: indexPath.section, itemIndex: indexPath.row)
-                        tableView.deleteRows(at: [indexPath], with: .fade)
-                    } catch {
-                        // TODO: Send to telemetry (should not fail)
-                        Alerts.showError(self, "Failed to remove")
-                    }
-                })
+                // Delete without asking here as the double tap in the editing mode serves as a prompt
+                do {
+                    let _ = try items.removeItem(sectionIndex: indexPath.section, itemIndex: indexPath.row)
+                    tableView.deleteRows(at: [indexPath], with: .fade)
+                } catch {
+                    // TODO: Send to telemetry (should not fail)
+                    Alerts.showError(self, "Failed to remove")
+                }
                 }
             case .insert: do {
                 // TODO: Send to telemetry (upcoming feature)

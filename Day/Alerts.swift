@@ -11,8 +11,8 @@ class Alerts {
     }
     
     static func askQueue(_ viewController: UIViewController, queue: @escaping (String) -> Void) {
-        let alert = UIAlertController(title: "Day", message: "Item:", preferredStyle: .alert)
-        alert.addTextField(configurationHandler: { textField in textField.autocapitalizationType = .words })
+        let alert = UIAlertController(title: "Day", message: nil, preferredStyle: .alert)
+        alert.addTextField(configurationHandler: { textField in textField.autocapitalizationType = .sentences })
         alert.addAction(UIAlertAction(title: "Close", style: .cancel, handler: nil ))
         alert.addAction(UIAlertAction(title: "Queue", style: .default, handler: { action in
             // Expect the text field to exist as we add it above
