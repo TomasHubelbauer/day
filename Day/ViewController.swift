@@ -17,7 +17,7 @@ class ViewController: UIViewController {
     }
 
     @IBAction func composeButtonItemAction(_ sender: UIBarButtonItem) {
-        Alerts.askString(self, "Item:", queue: { item in
+        Alerts.askQueue(self, queue: { item in
             if !item.isEmpty {
                 if let items = self.items {
                     do {
@@ -53,9 +53,7 @@ extension ViewController: UITableViewDelegate {
             // Pass these as fields as we cannot use init on the view controller: https://stackoverflow.com/a/27145059
             itemViewController.items = items
             itemViewController.indexPath = indexPath
-            itemViewController.reloadInList = {
-                self.itemTableView.reloadRows(at: [indexPath], with: .none)
-            }
+            itemViewController.tableView = itemTableView
             // Assume this works - we control the storyboard
             let navigationController = self.navigationController!
             navigationController.pushViewController(itemViewController, animated: true)
@@ -121,9 +119,7 @@ extension ViewController: UITableViewDataSource {
             switch editingStyle {
             case .delete: do {
                 let item = items.getItem(sectionIndex: indexPath.section, itemIndex: indexPath.row)
-                let alert = UIAlertController(title: "Day", message: item, preferredStyle: UIAlertControllerStyle.alert)
-                alert.addAction(UIAlertAction(title: "Keep", style: UIAlertActionStyle.cancel, handler: nil))
-                alert.addAction(UIAlertAction(title: "Delete", style: UIAlertActionStyle.destructive, handler: { (alertAction:UIAlertAction!) in
+                Alerts.askDelete(self, item, delete: {
                     do {
                         let _ = try items.removeItem(sectionIndex: indexPath.section, itemIndex: indexPath.row)
                         tableView.deleteRows(at: [indexPath], with: .fade)
@@ -131,9 +127,7 @@ extension ViewController: UITableViewDataSource {
                         // TODO: Send to telemetry (should not fail)
                         Alerts.showError(self, "Failed to remove")
                     }
-                }))
-                
-                self.present(alert, animated: true, completion: nil)
+                })
                 }
             case .insert: do {
                 // TODO: Send to telemetry (upcoming feature)
