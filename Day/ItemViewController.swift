@@ -21,7 +21,7 @@ extension ItemViewController: UITextViewDelegate {
             try items.setItem(sectionIndex: indexPath.section, itemIndex: indexPath.row, textView.text ?? "")
             reloadInList()
         } catch {
-            Errors.show(self, "Failed to edit")
+            Alerts.showError(self, "Failed to edit")
         }
     }
 }

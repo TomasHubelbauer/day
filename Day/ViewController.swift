@@ -1,7 +1,6 @@
 import UIKit
 
 class ViewController: UIViewController {
-    @IBOutlet weak var editorTextField: UITextField!
     @IBOutlet weak var itemTableView: UITableView!
 
     private var items: Items?
@@ -9,54 +8,37 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         do {
             items = try Items()
-            
-            editorTextField.delegate = self
-            editorTextField.becomeFirstResponder()
-            
             itemTableView.dataSource = self
             itemTableView.delegate = self
-            
-            editButtonItem.action = #selector(onToggleEdit)
         } catch {
             // Construct an alert with no button so that the user has no choice but to exit the app
-            Errors.show(self, "Failed to load", fatal: true)
+            Alerts.showError(self, "Failed to load", fatal: true)
         }
     }
-    
-    @objc func onToggleEdit() {
-        itemTableView.isEditing = !itemTableView.isEditing
-        editButtonItem.title = itemTableView.isEditing ? "Done" : "Edit"
-    }
-}
 
-// editorTextField UITextFieldDelegate
-extension ViewController: UITextFieldDelegate {
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        if var text = textField.text {
-            text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !text.isEmpty {
-                if let items = items {
+    @IBAction func composeButtonItemAction(_ sender: UIBarButtonItem) {
+        Alerts.askString(self, "Item:", queue: { item in
+            if !item.isEmpty {
+                if let items = self.items {
                     do {
-                        let sectionIndex = try items.queueItem(section: "", text)
+                        let sectionIndex = try items.queueItem(section: "", item)
                         let indexPath = IndexPath(item: 0, section: sectionIndex)
-                        itemTableView.insertRows(at: [indexPath], with: .automatic)
-                        textField.text = ""
+                        self.itemTableView.insertRows(at: [indexPath], with: .automatic)
                     } catch {
                         // TODO: Send to telemetry (should not fail)
-                        Errors.show(self, "Failed to queue")
-                        return false
+                        Alerts.showError(self, "Failed to queue")
                     }
                 } else {
                     // TODO: Send to telemetry (should not happen)
-                    Errors.show(self, "Failed to load", fatal: true)
-                    return false
+                    Alerts.showError(self, "Failed to load", fatal: true)
                 }
             }
-            
-            textField.resignFirstResponder()
-        }
-        
-        return true
+        })
+    }
+    
+    @IBAction func editButtonItemAction(_ sender: Any) {
+        itemTableView.isEditing = !itemTableView.isEditing
+        self.setEditing(itemTableView.isEditing, animated: true)
     }
 }
 
@@ -147,7 +129,7 @@ extension ViewController: UITableViewDataSource {
                         tableView.deleteRows(at: [indexPath], with: .fade)
                     } catch {
                         // TODO: Send to telemetry (should not fail)
-                        Errors.show(self, "Failed to remove")
+                        Alerts.showError(self, "Failed to remove")
                     }
                 }))
                 
@@ -162,7 +144,7 @@ extension ViewController: UITableViewDataSource {
             }
         } else {
             // TODO: Send to telemetry (should not happen)
-            Errors.show(self, "Failed to load", fatal: true)
+            Alerts.showError(self, "Failed to load", fatal: true)
         }
     }
     
@@ -173,11 +155,11 @@ extension ViewController: UITableViewDataSource {
                 try items.insertItem(sectionIndex: destinationIndexPath.section, itemIndex: destinationIndexPath.row, item)
             } catch {
                 // TODO: Send to telemetry (should not fail)
-                Errors.show(self, "Failed to move")
+                Alerts.showError(self, "Failed to move")
             }
         } else {
             // TODO: Send to telemetry (should not happen)
-            Errors.show(self, "Failed to load", fatal: true)
+            Alerts.showError(self, "Failed to load", fatal: true)
         }
     }
 }
