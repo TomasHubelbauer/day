@@ -34,7 +34,7 @@ class Items {
                             items.append([])
                         }
                         
-                        items[sections.count - 1].append(component)
+                        items[sections.count - 1].append(component.replacingOccurrences(of: "\t", with: "\n"))
                     }
                 }
             } else {
@@ -95,9 +95,13 @@ class Items {
             do {
                 var contents = ""
                 for (index, items) in items.enumerated() {
+                    if (items.count == 0) {
+                        continue
+                    }
+                    
                     contents.append("[" + sections[index] + "]\n")
                     for item in items {
-                        contents.append(item + "\n")
+                        contents.append(item.replacingOccurrences(of: "\n", with: "\t") + "\n")
                     }
                 }
                 
