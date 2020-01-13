@@ -16,3 +16,7 @@ XCode
 - Test moving works and persists including across sections
 - Test viewing works
 - Test editing works and propagates back and persists
+
+## To-Do
+
+### Extract the Files snippet to its own repo and drop this app
